@@ -1,6 +1,9 @@
 #include <iostream>
 #include <cstdlib>
 #include <ctime>
+#include <thread> // for std::this_thread::sleep_for
+#include <chrono>
+#include <string> // for std::chrono::milliseconds
 using namespace std;
 
 class HammingCode {
@@ -12,6 +15,7 @@ class HammingCode {
 
 public:
     void inputData();
+    void Graphics(int data[], int m);
     void calculateParityBits();
     void generateCodeword();
     void introduceError();
@@ -48,6 +52,34 @@ void HammingCode::inputData() {
     while ((1 << p) < (m + p + 1)) {
         p++;
     }
+
+
+    Graphics(data, m); // Pass the entire array and number of data bits to the Graphics function
+}
+
+// Function to simulate message sending animation
+void HammingCode::Graphics(int data[], int m) {
+    const int width = 30; // Width of the animation field
+    const int delay = 100; // Delay in milliseconds
+
+    cout << "Sender: [ ";
+    for (int i = 0; i < m; ++i) {
+        cout << data[i] << " ";
+    }
+    cout << "]" << endl;
+
+    // Clear the initial position of the sender
+    for (int i = 0; i < width + 2; ++i) {
+        cout << '\r' << string(i, ' ') << ">> [ ";
+        for (int j = 0; j < m; ++j) {
+            cout << data[j] << " ";
+        }
+        cout << "]";
+        cout.flush();
+        std::this_thread::sleep_for(std::chrono::milliseconds(delay));
+    }
+    
+    // Final position at receiver
 }
 
 void HammingCode::calculateParityBits() {
