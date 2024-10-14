@@ -3,179 +3,271 @@
 #include <vector>
 #include <cstdlib>
 #include <ctime>
+#include <fstream>
+#include <cstring>
 
 using namespace std;
-//#include <conio.h>
 
-int calculateParityBits(int dataBits){
-	int parityBits = 0;
-	while(pow(2,parityBits) < (dataBits + parityBits + 1)){
-		parityBits++;
-	}
-	return parityBits;
+class Welcome {
+    fstream temp;
+    char name[80], ph_no[10], email[20];
+    char username[20], password[20];
+    char log_username[20], log_password[20];
+
+public:
+    void login();
+    void registration();
+    void welcome_msg() {
+        cout << endl << endl << " Hey! " << username << endl;
+        cout << endl << "Welcome again in Error Detection and Correction\n\n" << endl;
+    }
+};
+
+void Welcome::registration() {
+    cout << endl << "Registration Page" << endl;
+    cout << endl << "Enter your name: ";
+    cin >> name;
+    cout << endl << "Enter your phone no: ";
+    cin >> ph_no;
+    cout << endl << "Enter your valid email ID: ";
+    cin >> email;
+
+    cout << endl << "Enter a username: ";
+    cin >> username;
+    cout << endl << "Enter a password: ";
+    cin >> password;
+
+    temp.open("users.txt", ios::out | ios::app);
+    if (!temp) {
+        cout << "Error! Unable to open file";
+        exit(1);
+    }
+    temp << username << " " << password << endl;
+    cout << "Successfully Created Account!" << endl;
+    temp.close();
 }
 
-vector<int> insertParityBits(vector<int>& data,int parityBits){
-	int totalBits = data.size() + parityBits;
-	vector<int> hammingCode(totalBits, 0);
+void Welcome::login() {
+    cout << endl << "Login Page" << endl << endl;
+    cout << endl << "Username: ";
+    cin >> log_username;
+    cout << endl << "Password: ";
+    cin >> log_password;
 
-	int j =0;
-	for(int i=1; i<=totalBits; i++){
-		if((i&(i-1)) != 0){
-		   hammingCode[i-1] = data[j];
-		   j++;
-		}
-	}
-	return hammingCode;
+    char captcha[6];
+    const char chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    
+    srand(static_cast<unsigned int>(time(0)));
+
+    for (int i = 0; i < 5; i++) {
+        captcha[i] = chars[rand() % (sizeof(chars) - 1)];
+    }
+    captcha[5] = '\0';
+
+    cout << endl << "Captcha: " << captcha << endl;
+    char user_input[6];
+    cout << "Enter captcha: ";
+    cin >> user_input;
+
+    if (strcmp(captcha, user_input) != 0) {
+        cout << "Incorrect Captcha!" << endl;
+        return;
+    }
+
+    temp.open("users.txt", ios::in);
+    if (!temp) {
+        cout << endl << "Error! Unable to open file";
+        exit(1);
+    }
+
+    while (temp >> username >> password) {
+        if (strcmp(log_username, username) == 0) {
+            if (strcmp(log_password, password) == 0) {
+                cout << endl << "Login Successfully!!!" << endl;
+                temp.close();
+                welcome_msg();
+                return;
+            } else {
+                cout << endl << "Incorrect Password!" << endl;
+                temp.close();
+                return;
+            }
+        }
+    }
+    cout << endl << "Username not found!" << endl;
+    temp.close();
 }
 
-void calculateParityBits(vector<int>& hammingCode, int parityBits){
-	int totalBits = hammingCode.size();
-
-	for(int i=0; i<parityBits; i++){
-	    int parityPos = pow(2,i) - 1;
-	    int parity = 0;
-
-	    for(int j=parityPos; j<totalBits; j++){
-	       if((j+1) & (parityPos + 1)){
-		  parity ^= hammingCode[j];
-	       }
-	    }
-
-	    hammingCode[parityPos] = parity;
-	}
+int calculateParityBits(int dataBits) {
+    int parityBits = 0;
+    while (pow(2, parityBits) < (dataBits + parityBits + 1)) {
+        parityBits++;
+    }
+    return parityBits;
 }
 
-int detectError(vector<int>& hammingCode, int parityBits){
-	int totalBits = hammingCode.size();
-	int errorPosition = 0;
+vector<int> insertParityBits(vector<int>& data, int parityBits) {
+    int totalBits = data.size() + parityBits;
+    vector<int> hammingCode(totalBits, 0);
 
-	for(int i=0;i<parityBits;i++){
-	  int parityPos = pow(2,i) - 1;
-	  int parity = 0;
-
-	  for(int j=parityPos; j<totalBits; j++){
-	     if((j+1) & (parityPos + 1)){
-	       parity ^= hammingCode[j];
-	     }
-	  }
-
-	  if(parity != 0){
-	      errorPosition += parityPos + 1;
-	  }
-	}
-	return errorPosition;
+    int j = 0;
+    for (int i = 1; i <= totalBits; i++) {
+        if ((i & (i - 1)) != 0) {
+            hammingCode[i - 1] = data[j];
+            j++;
+        }
+    }
+    return hammingCode;
 }
 
-void printHammingCode(vector<int>& hammingCode){
-	for(int i=0;i<hammingCode.size();i++){
-	   cout<<hammingCode[i]<<"  ";
-	}
-	cout<<endl;
+void calculateParityBits(vector<int>& hammingCode, int parityBits) {
+    int totalBits = hammingCode.size();
+
+    for (int i = 0; i < parityBits; i++) {
+        int parityPos = pow(2, i) - 1;
+        int parity = 0;
+
+        for (int j = parityPos; j < totalBits; j++) {
+            if ((j + 1) & (parityPos + 1)) {
+                parity ^= hammingCode[j];
+            }
+        }
+
+        hammingCode[parityPos] = parity;
+    }
 }
 
-void introduceRandomErrors(vector<int>& hammingCode, int errorCount){
-	srand(static_cast<unsigned int>(time(0)));
-	
-	for(int i=0;i<errorCount;i++){
-		int pos = rand() % hammingCode.size();
-		hammingCode[pos] ^= 1;
-	}
+int detectError(vector<int>& hammingCode, int parityBits) {
+    int totalBits = hammingCode.size();
+    int errorPosition = 0;
+
+    for (int i = 0; i < parityBits; i++) {
+        int parityPos = pow(2, i) - 1;
+        int parity = 0;
+
+        for (int j = parityPos; j < totalBits; j++) {
+            if ((j + 1) & (parityPos + 1)) {
+                parity ^= hammingCode[j];
+            }
+        }
+
+        if (parity != 0) {
+            errorPosition += parityPos + 1;
+        }
+    }
+    return errorPosition;
 }
 
-int main(){
-	int dataBits;
-//	clrscr();
-	cout<<"Enter the number of data bits: ";
-	cin>>dataBits;
+void printHammingCode(vector<int>& hammingCode) {
+    for (int i = 0; i < hammingCode.size(); i++) {
+        cout << hammingCode[i] << "  ";
+    }
+    cout << endl;
+}
 
-	vector<int> data(dataBits);
-	cout<<"Enter the data bits seperated by space: ";
-	for(int i=0; i<dataBits;i++){
-	   cin>>data[i];
-	}
+void introduceRandomErrors(vector<int>& hammingCode, int errorCount) {
+    srand(static_cast<unsigned int>(time(0)));
 
-	int parityBits = calculateParityBits(dataBits);
-	cout<<"Number of Parity bits needed : "<<parityBits<<endl;
+    for (int i = 0; i < errorCount; i++) {
+        int pos = rand() % hammingCode.size();
+        hammingCode[pos] ^= 1;
+    }
+}
 
-	vector<int> hammingCode = insertParityBits(data,parityBits);
+int main() {
+    Welcome user;
+    int choice;
 
-	calculateParityBits(hammingCode,parityBits);
+    cout << endl << "Error Detection and Correction" << endl;
 
-	cout<<"Hamming code with parity bits: ";
-	printHammingCode(hammingCode);
+welcome:
+    cout << endl << "Welcome" << endl;
+    cout << endl << "1. Login" << endl;
+    cout << endl << "2. Register" << endl;
+    cout << endl << "Enter your choice: " << endl;
+    cin >> choice;
 
-	int errorPosition = detectError(hammingCode,parityBits);
+    switch (choice) {
+        case 1:
+            user.login();
+            break;
+        case 2:
+            user.registration();
+            goto welcome;
+        default:
+            cout << endl<<"Invalid Option! Please try again." << endl;
+            goto welcome;
+    }
 
-	if(errorPosition == 0){
-	   cout<<"No errors detected in the hamming code. "<<endl;
-	   
-	}
-	else{
-	   cout<<"Error detected at position : "<<errorPosition<<endl;
+    int dataBits;
+    cout << endl << "Enter the number of data bits: ";
+    cin >> dataBits;
 
-	   hammingCode[errorPosition - 1] ^= 1;
+    vector<int> data(dataBits);
+    cout << endl <<"Enter the data bits separated by space: ";
+    for (int i = 0; i < dataBits; i++) {
+        cin >> data[i];
+    }
 
-	   cout<<"Corrected Hamming Code: ";
+    int parityBits = calculateParityBits(dataBits);
+    cout <<endl << "Number of Parity bits needed: " << parityBits << endl;
 
-	   printHammingCode(hammingCode);
-	}
+    vector<int> hammingCode = insertParityBits(data, parityBits);
+    calculateParityBits(hammingCode, parityBits);
 
-	int option;
-	cout<<"Do you want to introduce random errors \nor\n Do you have data of Receivers side ? \n(1 for random errors, 2 to give data of receivre's side , 0 for No option): ";
-	cin>>option;
-	
-	if(option == 1){
-		int errorCount;
-		cout<<"Enter the number of random error to introduce: ";
-		cin>>errorCount;
-		introduceRandomErrors(hammingCode,errorCount);
-		cout<<"Hamming code after intoducing random error : ";
-		printHammingCode(hammingCode);	
-	
-	int errorPosition = detectError(hammingCode,parityBits);
+    cout << endl <<"Hamming code with parity bits: ";
+    printHammingCode(hammingCode);
 
-	if(errorPosition == 0){
-	   cout<<"No errors detected in the hamming code. "<<endl;
-	}
-	else{
-	   cout<<"Error detected at position : "<<errorPosition<<endl;
+    int errorPosition = detectError(hammingCode, parityBits);
+    if (errorPosition == 0) {
+        cout << endl <<"No errors detected in the Hamming code." << endl;
+    } else {
+        cout << endl <<"Error detected at position: " << errorPosition << endl;
+        hammingCode[errorPosition - 1] ^= 1;  // Correct the error
+        cout << endl <<"Corrected Hamming Code: ";
+        printHammingCode(hammingCode);
+    }
 
-	   hammingCode[errorPosition - 1] ^= 1;
+    int option;
+    cout << endl <<endl <<"Do you want to introduce random errors \nor\n Do you have data from the receiver's side? \n(1 for random errors, 2 for receiver's data, 0 for No option): ";
+    cin >> option;
 
-	   cout<<"Corrected Hamming Code: ";
+    if (option == 1) {
+        int errorCount;
+        cout <<endl << "Enter the number of random errors to introduce: ";
+        cin >> errorCount;
+        introduceRandomErrors(hammingCode, errorCount);
+        cout << endl <<"Hamming code after introducing random errors: ";
+        printHammingCode(hammingCode);
 
-	   printHammingCode(hammingCode);
-	}
-	}
-	
-	else if(option == 2){
-		vector<int> receivedHammingCode(hammingCode.size());
-		cout<<"Enter the received Hamming Code : ";
-		
-		for(int i=0;i<receivedHammingCode.size();i++){
-			cin>>receivedHammingCode[i];
-		}
-		
-		int errorPosition = detectError(receivedHammingCode,parityBits);
-		
-		if(errorPosition == 0){
-	   		cout<<"No errors detected in the hamming code. "<<endl;
-		}
-		else{
-	   		cout<<"Error detected at position : "<<errorPosition<<endl;
+        errorPosition = detectError(hammingCode, parityBits);
+        if (errorPosition == 0) {
+            cout << endl <<"No errors detected in the Hamming code." << endl;
+        } else {
+            cout << endl <<"Error detected at position: " << errorPosition << endl;
+            hammingCode[errorPosition - 1] ^= 1;  // Correct the error
+            cout << "Corrected Hamming Code: ";
+            printHammingCode(hammingCode);
+        }
+    } else if (option == 2) {
+        vector<int> receivedHammingCode(hammingCode.size());
+        cout << endl <<"Enter the received Hamming Code: ";
+        for (int i = 0; i < receivedHammingCode.size(); i++) {
+            cin >> receivedHammingCode[i];
+        }
 
-	   		hammingCode[errorPosition - 1] ^= 1;
+        errorPosition = detectError(receivedHammingCode, parityBits);
+        if (errorPosition == 0) {
+            cout <<endl << "No errors detected in the Hamming code." << endl;
+        } else {
+            cout <<endl <<endl << "Error detected at position: " << errorPosition << endl;
+            receivedHammingCode[errorPosition - 1] ^= 1;  // Correct the error
+            cout << endl <<"Corrected Hamming Code: ";
+            printHammingCode(receivedHammingCode);
+        }
+    } else if (option == 0) {
+        exit(0);
+    }
 
-	   		cout<<"Corrected Hamming Code: ";
-
-	   		printHammingCode(hammingCode);
-		}
-	}
-	else if(option == 0){
-		exit (1);
-	}
-
-//	getch();
-	return 0;
+    return 0;
 }
